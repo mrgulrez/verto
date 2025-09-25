@@ -2,18 +2,11 @@
   "version": 2,
   "builds": [
     {
-      "src": "quiz_project/wsgi.py",
+      "src": "api/index.py",
       "use": "@vercel/python",
       "config": {
         "maxLambdaSize": "15mb",
         "runtime": "python3.12"
-      }
-    },
-    {
-      "src": "build_files.sh",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "staticfiles"
       }
     }
   ],
@@ -24,10 +17,11 @@
     },
     {
       "src": "/(.*)",
-      "dest": "quiz_project/wsgi.py"
+      "dest": "/api/index.py"
     }
   ],
   "env": {
     "DJANGO_SETTINGS_MODULE": "quiz_project.settings"
-  }
+  },
+  "buildCommand": "pip install -r requirements.txt && python manage.py migrate --noinput && python manage.py collectstatic --noinput"
 }

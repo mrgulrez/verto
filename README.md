@@ -101,7 +101,8 @@ quiz-backend/
 │   └── wsgi.py           # WSGI configuration
 ├── requirements.txt       # Python dependencies
 ├── vercel.json           # Vercel configuration
-├── build_files.sh        # Build script for Vercel
+├── api/                  # Vercel serverless functions
+│   └── index.py         # Main entry point
 └── manage.py             # Django management script
 ```
 
