@@ -90,15 +90,32 @@ WSGI_APPLICATION = 'quiz_project.wsgi.application'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 # Always require DATABASE_URL - no SQLite fallback
-DATABASE_URL = config('DATABASE_URL')
-
-DATABASES = {
-    'default': dj_database_url.config(
-        default=DATABASE_URL,
-        conn_max_age=600,
-        conn_health_checks=True,
-    )
-}
+try:
+    DATABASE_URL = config('DATABASE_URL')
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=DATABASE_URL,
+            conn_max_age=600,
+            conn_health_checks=True,
+        )
+    }
+except Exception as e:
+    print(f"Database configuration error: {e}")
+    print("DATABASE_URL environment variable is required!")
+    # For debugging purposes, show what environment variables are available
+    if IS_VERCEL:
+        print("Available environment variables:")
+        for key in os.environ.keys():
+            if not key.startswith('_') and 'SECRET' not in key.upper() and 'PASSWORD' not in key.upper():
+                print(f"  {key}")
+    # Temporary fallback to prevent crash - REMOVE AFTER SETTING DATABASE_URL
+    print("Using temporary SQLite fallback - CONFIGURE DATABASE_URL ASAP!")
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': ':memory:',  # In-memory database for temporary debugging
+        }
+    }
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
@@ -123,7 +140,6 @@ AUTH_PASSWORD_VALIDATORS = [
 if IS_VERCEL:
     CORS_ALLOWED_ORIGINS = config(
         'CORS_ALLOWED_ORIGINS', 
-        "http://localhost:5173",
         default='https://verto-quiz.vercel.app'
     ).split(',')
 else:

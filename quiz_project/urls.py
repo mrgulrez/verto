@@ -37,6 +37,21 @@ def debug_static(request):
         admin_css_path = os.path.join(static_root, 'admin', 'css', 'base.css')
         admin_css_exists = os.path.exists(admin_css_path)
     
+    # Check database connection
+    db_status = "unknown"
+    try:
+        from django.db import connection
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT 1")
+        db_status = "connected"
+    except Exception as e:
+        db_status = f"error: {str(e)}"
+    
+    # Check environment variables
+    env_vars = {}
+    for key in ['DATABASE_URL', 'SECRET_KEY', 'DEBUG', 'VERCEL', 'ALLOWED_HOSTS', 'CORS_ALLOWED_ORIGINS']:
+        env_vars[key] = 'SET' if os.environ.get(key) else 'NOT SET'
+    
     return JsonResponse({
         'static_root': static_root,
         'static_url': static_url,
@@ -45,6 +60,9 @@ def debug_static(request):
         'static_files_exist': static_files_exist,
         'admin_css_exists': admin_css_exists,
         'staticfiles_storage': getattr(settings, 'STATICFILES_STORAGE', None),
+        'database_status': db_status,
+        'environment_variables': env_vars,
+        'python_path': os.getcwd(),
     })
 
 urlpatterns = [
