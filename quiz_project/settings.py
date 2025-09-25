@@ -191,18 +191,18 @@ STATICFILES_FINDERS = [
 ]
 
 # WhiteNoise configuration for serving static files
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+# Always use WhiteNoise for consistency
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 
 # WhiteNoise settings
 WHITENOISE_USE_FINDERS = True
 WHITENOISE_AUTOREFRESH = True
-WHITENOISE_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
-# Additional static files configuration for production
+# Production-specific WhiteNoise settings
 if IS_VERCEL:
-    # Disable Django's static file serving in favor of WhiteNoise
-    WHITENOISE_SKIP_COMPRESS_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'zip', 'gz', 'tgz', 'bz2', 'tbz', 'xz', 'br']
     WHITENOISE_MAX_AGE = 31536000  # 1 year
+    # Serve static files directly through Django/WhiteNoise
+    WHITENOISE_STATIC_PREFIX = '/static/'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
