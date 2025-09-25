@@ -11,11 +11,8 @@ import os
 
 from django.core.wsgi import get_wsgi_application
 
-# Use production settings if deployed on Vercel
-if os.environ.get('VERCEL'):
-    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'quiz_project.settings_production')
-else:
-    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'quiz_project.settings')
+# Use single settings file for both development and production
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'quiz_project.settings')
 
 application = get_wsgi_application()
 

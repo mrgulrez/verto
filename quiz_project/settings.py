@@ -10,6 +10,8 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
+import os
+import dj_database_url
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -20,12 +22,20 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-*kkbwwn8&8_f319e%@k+yp55x0j8@e$0)#69zf06fd6je23wfx'
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-*kkbwwn8&8_f319e%@k+yp55x0j8@e$0)#69zf06fd6je23wfx')
 
 # SECURITY WARNING: don't run with debug turned on in production!
+#DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 DEBUG = True
 
-ALLOWED_HOSTS = []
+# Check if running on Vercel
+IS_VERCEL = os.environ.get('VERCEL', False)
+
+# Allowed hosts - different for development and production
+if IS_VERCEL:
+    ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '.vercel.app,.vercel.now.sh').split(',')
+else:
+    ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
 
 # Application definition
@@ -47,6 +57,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware', 
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # For serving static files on Vercel
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -78,12 +89,22 @@ WSGI_APPLICATION = 'quiz_project.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+# Use PostgreSQL in production (Vercel), SQLite in development
+if IS_VERCEL and os.environ.get('DATABASE_URL'):
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=os.environ.get('DATABASE_URL'),
+            conn_max_age=600,
+            conn_health_checks=True,
+        )
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 
 # Password validation
@@ -106,10 +127,16 @@ AUTH_PASSWORD_VALIDATORS = [
 
 
 # CORS configuration for React frontend
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",  # Create React App default
-    "http://localhost:5173",  # Vite default
-]
+if IS_VERCEL:
+    CORS_ALLOWED_ORIGINS = os.environ.get(
+        'CORS_ALLOWED_ORIGINS', 
+        'https://your-frontend.vercel.app'
+    ).split(',')
+else:
+    CORS_ALLOWED_ORIGINS = [
+        "http://localhost:3000",  # Create React App default
+        "http://localhost:5173",  # Vite default
+    ]
 
 # REST Framework configuration
 REST_FRAMEWORK = {
@@ -142,9 +169,31 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+STATIC_ROOT = Path(BASE_DIR) / 'staticfiles'
+STATICFILES_DIRS = []
+
+# WhiteNoise configuration for serving static files on Vercel
+if IS_VERCEL:
+    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Production security settings (only applied on Vercel)
+if IS_VERCEL:
+    # Security settings
+    SECURE_SSL_REDIRECT = os.environ.get('SECURE_SSL_REDIRECT', 'True') == 'True'
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    X_FRAME_OPTIONS = 'DENY'
+    
+    # CSRF trusted origins
+    CSRF_TRUSTED_ORIGINS = [
+        'https://*.vercel.app',
+        'https://*.vercel.now.sh',
+    ]

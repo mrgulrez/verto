@@ -96,8 +96,7 @@ quiz-backend/
 │   ├── views.py          # API views
 │   └── urls.py           # API URLs
 ├── quiz_project/          # Project configuration
-│   ├── settings.py       # Base settings
-│   ├── settings_production.py  # Production settings
+│   ├── settings.py       # Settings (development & production)
 │   ├── urls.py           # Main URLs
 │   └── wsgi.py           # WSGI configuration
 ├── requirements.txt       # Python dependencies
