@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 import os
 import dj_database_url
 from pathlib import Path
+from decouple import config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -22,17 +23,17 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-*kkbwwn8&8_f319e%@k+yp55x0j8@e$0)#69zf06fd6je23wfx')
+SECRET_KEY = config('SECRET_KEY', default='django-insecure-*kkbwwn8&8_f319e%@k+yp55x0j8@e$0)#69zf06fd6je23wfx')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('DEBUG', 'True') == 'True'
+DEBUG = config('DEBUG', default=True, cast=bool)
 
 # Check if running on Vercel
-IS_VERCEL = os.environ.get('VERCEL', False)
+IS_VERCEL = config('VERCEL', default=False, cast=bool)
 
 # Allowed hosts - different for development and production
 if IS_VERCEL:
-    ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '.vercel.app,.vercel.now.sh').split(',')
+    ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='.vercel.app,.vercel.now.sh').split(',')
 else:
     ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
@@ -88,33 +89,16 @@ WSGI_APPLICATION = 'quiz_project.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-# Use PostgreSQL in production (Vercel), SQLite in development
-if IS_VERCEL and os.environ.get('DATABASE_URL'):
-    try:
-        DATABASES = {
-            'default': dj_database_url.config(
-                default=os.environ.get('DATABASE_URL'),
-                conn_max_age=600,
-                conn_health_checks=True,
-            )
-        }
-    except Exception as e:
-        print(f"Database configuration error: {e}")
-        # Fallback to SQLite if PostgreSQL fails
-        DATABASES = {
-            'default': {
-                'ENGINE': 'django.db.backends.sqlite3',
-                'NAME': BASE_DIR / 'db.sqlite3',
-            }
-        }
-else:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
-        }
-    }
+# Always require DATABASE_URL - no SQLite fallback
+DATABASE_URL = config('DATABASE_URL')
 
+DATABASES = {
+    'default': dj_database_url.config(
+        default=DATABASE_URL,
+        conn_max_age=600,
+        conn_health_checks=True,
+    )
+}
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
@@ -137,9 +121,10 @@ AUTH_PASSWORD_VALIDATORS = [
 
 # CORS configuration for React frontend
 if IS_VERCEL:
-    CORS_ALLOWED_ORIGINS = os.environ.get(
+    CORS_ALLOWED_ORIGINS = config(
         'CORS_ALLOWED_ORIGINS', 
-        'https://your-frontend.vercel.app'
+        "http://localhost:5173",
+        default='https://verto-quiz.vercel.app'
     ).split(',')
 else:
     CORS_ALLOWED_ORIGINS = [
